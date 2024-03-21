@@ -2,22 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Random Plant Stats</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Would You Water?</title>
+    <!-- Include Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        body {
+            background: url('./plantbg.png') no-repeat center center fixed; 
+            background-size: cover;
+            color: #f5f5f5;
+        }
+        .container {
+            text-align: center;
+            margin-top: 50px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .btn {
+            margin: 10px;
+        }
         #plantStats {
-            margin-top: 20px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <h1>Random Plant Stats</h1>
-    <button id="fetchPlant">Fetch Random Plant</button>
-    <div id="plantStats"></div>
+    <div class="container">
+        <h1>Would You Water?</h1>
+        <div id="plantStats" class="alert alert-info"></div>
+        <button id="yesBtn" class="btn btn-success">Yes</button>
+        <button id="noBtn" class="btn btn-success">No</button>
+    </div>
 
     <script>
-        document.getElementById('fetchPlant').addEventListener('click', fetchRandomPlant);
-
-        // Function to fetch a random plant and display its stats
+        let currentPlantId = null;
         function fetchRandomPlant() {
             fetch('https://garden-of-eden.herokuapp.com/plants/rand')
                 .then(response => {
@@ -27,28 +46,78 @@
                     return response.json();
                 })
                 .then(data => {
-                    displayPlantStats(data);
+                    const sunExp = data.sun_exp.toFixed(2);
+                    const hrsSinceLastWater = data.hrs_since_last_water.toFixed(2);
+                    const soilMoisture = data.soil_moisture.toFixed(2);
+                    currentPlantId = data.id;
+                    displayPlantStats(sunExp, hrsSinceLastWater, soilMoisture);
                 })
                 .catch(error => {
                     console.error('There has been a problem with your fetch operation:', error);
                 });
         }
+        function displayPlantStats(sunExp, hrsSinceLastWater, soilMoisture) {
+            let sunExposureMessage;
+            if (sunExp <= 0.25) {
+                sunExposureMessage = "Plant has low sun exposure.";
+            } else if (sunExp <= 0.5) {
+                sunExposureMessage = "Plant has moderate sun exposure.";
+            } else if (sunExp <= 0.75) {
+                sunExposureMessage = "Plant has decent sun exposure.";
+            } else {
+                sunExposureMessage = "Plant has large sunlight exposure.";
+            }
 
-        // Function to display the plant stats in HTML
-        function displayPlantStats(plant) {
+            let moistureMessage;
+            if (soilMoisture <= 0.25) {
+                moistureMessage = "is very dry.";
+            } else if (soilMoisture <= 0.5) {
+                moistureMessage = "is relatively dry.";
+            } else if (soilMoisture <= 0.75) {
+                moistureMessage = "is moderately wet.";
+            } else {
+                moistureMessage = "is very moist.";
+            }
+
             const plantStatsElement = document.getElementById('plantStats');
             plantStatsElement.innerHTML = `
-                <p>ID: ${plant.ID}</p>
-                <p>Sun Exposure: ${plant.sunExp}</p>
-                <p>Humidity: ${plant.humidity}</p>
-                <p>Hours Since Last Water: ${plant.hrsSinceLastWater}</p>
-                <p>Soil Moisture: ${plant.soilMoisture}</p>
-                <p>Water: ${plant.water}</p>
-            `;
+                <p>The following is the state of a plant, please share if you would water it or not :)</p>
+                <p>${sunExposureMessage}</p>
+                <p>The soil ${moistureMessage}</p>
+                <p>It has been ${hrsSinceLastWater} hours since the last water. Would you water the plant?</p>`;
         }
 
-        // Fetch a random plant on startup
+        function handleDecision(decision) {
+            if(currentPlantId === null) {
+                console.error("No plant ID is available for the decision.");
+                return;
+            }
+            console.log("{ \"ID\": " + currentPlantId + ", \"newWater\": " + decision +" }");
+            fetch('https://garden-of-eden.herokuapp.com/plant/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: "{ \"ID\": " + currentPlantId + ", \"newWater\": " + decision +" }",
+            })
+            .then(data => {
+                console.log("Response from the server:", data);
+                alert(decision === 1 ? "Thank you, your choise to water the plant was recorded." : "Thank you, your choice not to water the plant was recorded.");
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('There has been a problem with your fetch operation:', error);
+            });
+        }
+
+        document.getElementById('yesBtn').addEventListener('click', () => handleDecision(1));
+        document.getElementById('noBtn').addEventListener('click', () => handleDecision(0));
+
         fetchRandomPlant();
     </script>
+    <!-- Include Bootstrap JS and its dependencies (Optional, if you need Bootstrap JS components) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
