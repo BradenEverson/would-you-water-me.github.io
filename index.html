@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Random Plant Stats</title>
+    <style>
+        #plantStats {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Random Plant Stats</h1>
+    <button id="fetchPlant">Fetch Random Plant</button>
+    <div id="plantStats"></div>
+
+    <script>
+        document.getElementById('fetchPlant').addEventListener('click', fetchRandomPlant);
+
+        // Function to fetch a random plant and display its stats
+        function fetchRandomPlant() {
+            fetch('https://garden-of-eden.herokuapp.com/plants/rand')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    displayPlantStats(data);
+                })
+                .catch(error => {
+                    console.error('There has been a problem with your fetch operation:', error);
+                });
+        }
+
+        // Function to display the plant stats in HTML
+        function displayPlantStats(plant) {
+            const plantStatsElement = document.getElementById('plantStats');
+            plantStatsElement.innerHTML = `
+                <p>ID: ${plant.ID}</p>
+                <p>Sun Exposure: ${plant.sunExp}</p>
+                <p>Humidity: ${plant.humidity}</p>
+                <p>Hours Since Last Water: ${plant.hrsSinceLastWater}</p>
+                <p>Soil Moisture: ${plant.soilMoisture}</p>
+                <p>Water: ${plant.water}</p>
+            `;
+        }
+
+        // Fetch a random plant on startup
+        fetchRandomPlant();
+    </script>
+</body>
+</html>
